@@ -1,0 +1,9 @@
+# node
+.node-versin
+node_modules
+
+# typescript
+dist/
+
+# vscode
+.vscode

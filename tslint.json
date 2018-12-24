@@ -1,0 +1,13 @@
+{
+  "defaultSeverity": "error",
+  "extends": ["tslint-plugin-prettier"],
+  "jsRules": {},
+  "rules": {
+    "no-console": false,
+    "object-literal-sort-keys": false,
+    "semicolon": false,
+    "arrow-parens": false,
+    "quotemark": false,
+    "eofline": true
+  }
+}
