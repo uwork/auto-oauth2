@@ -8,5 +8,5 @@
     "resolveJsonModule": true,
     "esModuleInterop": true
   },
-  "include": ["index.ts", "src/**/*"]
+  "include": ["index.ts", "lib/**/*"]
 }
