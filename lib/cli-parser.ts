@@ -2,8 +2,19 @@ import commander from 'commander'
 const pjson = require('../package.json')
 
 export type ParserOption = {
+  /**
+   * command line arguments.
+   */
   argv?: string[]
+
+  /**
+   * OAuth client id
+   */
   oauthClientId?: string
+
+  /**
+   * OAuth secret key
+   */
   oauthSecretKey?: string
 }
 
@@ -12,13 +23,16 @@ export class CliParser {
   oauthSecretKey?: string
 
   /**
-   * CLI引数をパースします
+   * parse cli arguments.
    *
-   * @param options 引数
+   * @param options parser options.
+   * or
+   * process.env.AAUTH_CLIENT_ID
+   * process.env.AAUTH_SECRET_ID
    */
-  constructor(options: ParserOption) {
-    this.oauthClientId = options.oauthClientId || process.env.OAUTH_CLIENT_ID
-    this.oauthSecretKey = options.oauthSecretKey || process.env.OAUTH_SECRET_KEY
+  constructor(options: ParserOption = {}) {
+    this.oauthClientId = options.oauthClientId || process.env.AAUTH_CLIENT_ID
+    this.oauthSecretKey = options.oauthSecretKey || process.env.AAUTH_SECRET_KEY
     if (options.argv && 0 < options.argv.length) {
       commander
         .version(pjson.version)
