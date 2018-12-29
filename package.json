@@ -12,5 +12,7 @@
     "tslint-plugin-prettier": "^2.0.1",
     "typescript": "^3.2.2"
   },
-  "scripts": {}
+  "scripts": {
+    "dev": "tsc --watch"
+  }
 }
