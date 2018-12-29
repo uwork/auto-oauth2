@@ -1,4 +1,4 @@
-import { CliParser, ParserOption } from '../cli-parser'
+import { CliParser, CliParserOption } from '../cli-parser'
 
 describe('cli-parser', () => {
   it('cli args', () => {
@@ -15,7 +15,7 @@ describe('cli-parser', () => {
   })
 
   it('option args', () => {
-    const tests: ParserOption[] = [{ oauthClientId: 'clientId', oauthSecretKey: 'secretId' }]
+    const tests: CliParserOption[] = [{ oauthClientId: 'clientId', oauthSecretKey: 'secretId' }]
     for (const opts of tests) {
       const params = new CliParser(opts)
 
@@ -25,7 +25,7 @@ describe('cli-parser', () => {
   })
 
   it('env args', () => {
-    const tests: ParserOption[] = [{ oauthClientId: 'clientId', oauthSecretKey: 'secretId' }]
+    const tests: CliParserOption[] = [{ oauthClientId: 'clientId', oauthSecretKey: 'secretId' }]
     for (const opts of tests) {
       process.env.AAUTH_CLIENT_ID = opts.oauthClientId
       process.env.AAUTH_SECRET_KEY = opts.oauthSecretKey

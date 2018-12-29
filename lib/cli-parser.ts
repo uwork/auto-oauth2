@@ -1,7 +1,7 @@
 import commander from 'commander'
 const pjson = require('../package.json')
 
-export type ParserOption = {
+export type CliParserOption = {
   /**
    * command line arguments.
    */
@@ -30,7 +30,7 @@ export class CliParser {
    * process.env.AAUTH_CLIENT_ID
    * process.env.AAUTH_SECRET_ID
    */
-  constructor(options: ParserOption = {}) {
+  constructor(options: CliParserOption = {}) {
     this.oauthClientId = options.oauthClientId || process.env.AAUTH_CLIENT_ID
     this.oauthSecretKey = options.oauthSecretKey || process.env.AAUTH_SECRET_KEY
     if (options.argv && 0 < options.argv.length) {
