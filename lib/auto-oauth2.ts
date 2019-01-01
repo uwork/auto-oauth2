@@ -55,13 +55,7 @@ export class AutoOauth2 {
    */
   private async loadAccessToken() {
     if (fs.existsSync(this.tokenFilePath)) {
-      const tokenData = JSON.parse(fs.readFileSync(this.tokenFilePath).toString()) as AccessToken
-      let token = this.auth2.createToken(tokenData.access_token, tokenData.refresh_token!, {})
-      token.expiresIn(tokenData.expires_in!)
-      if (token.expired()) {
-        token = await token.refresh()
-      }
-      return this.saveAccessToken(token)
+      return JSON.parse(fs.readFileSync(this.tokenFilePath).toString()) as AccessToken
     }
     return undefined
   }
