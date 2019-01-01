@@ -2,6 +2,9 @@ import { AutoOauth2, AutoOauthOptions, AccessToken } from '../auto-oauth2'
 import fs from 'fs'
 import path from 'path'
 
+jest.mock('readline')
+jest.mock('child_process')
+
 describe('AutoOauth2', () => {
   // basic pattern
   const test: AutoOauthOptions = {
@@ -10,8 +13,7 @@ describe('AutoOauth2', () => {
     authorizeUri: 'http://localhost/auth',
     accessTokenUri: 'http://localhost/token',
     redirectUri: 'http://localhost/callback',
-    scopes: ['scope1', 'scope2'],
-    noGui: true
+    scopes: ['scope1', 'scope2']
   }
 
   describe('loadAccessToken', () => {
@@ -45,6 +47,32 @@ describe('AutoOauth2', () => {
       const token = await (oauth2.loadAccessToken() as Promise<AccessToken>)
 
       expect(token).toBeUndefined()
+    })
+  })
+
+  describe('requestAuthorizeCode', () => {
+    it('mock stdin', async () => {
+      const oauth2 = new AutoOauth2({
+        ...test,
+        noGui: true
+      }) as any
+
+      const rl = require('readline')
+      rl._mockInput = 'test'
+      const code = await oauth2.requestAuthorizeCode()
+      expect(code).toBeDefined()
+      expect(code).toBe(rl._mockInput)
+    })
+
+    it('input empty code', async () => {
+      const oauth2 = new AutoOauth2({
+        ...test,
+        noGui: true
+      }) as any
+
+      const rl = require('readline')
+      rl._mockInput = ''
+      expect(oauth2.requestAuthorizeCode()).rejects.toThrow('empty code.')
     })
   })
 })

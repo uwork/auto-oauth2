@@ -13,6 +13,7 @@ export type AutoOauthOptions = CliParserOption & {
   responseType?: 'code' | 'token' | 'code_and_token'
   scopes: string[]
   noGui?: boolean
+  platform?: string
   tokenSavePath?: string
 }
 
@@ -36,6 +37,7 @@ export class AutoOauth2 {
       scopes: this.options.scopes
     })
     this.tokenFilePath = this.options.tokenSavePath || DEFAULT_TOKEN_FILE_PATH
+    this.options.platform = this.options.platform || process.platform
   }
 
   async autoAuthorize(): Promise<AccessToken> {
@@ -68,11 +70,22 @@ export class AutoOauth2 {
       query: { response_type: this.options.responseType! }
     })
 
-    const code = await new Promise(resolve => {
+    const code = await new Promise((resolve, reject) => {
       const rl = readline.createInterface(process.stdin, process.stdout)
-      exec(`open '${uri}'`)
+      if (!this.options.noGui) {
+        switch (this.options.platform) {
+          case 'darwin': {
+            // mac only
+            exec(`open '${uri}'`)
+            break
+          }
+        }
+      }
       console.log(`open authorize uri: ${uri}`)
       rl.question('input code: ', code => {
+        if (!code) {
+          return reject(Error('empty code.'))
+        }
         console.log(`code: ${code}`)
         resolve(code)
       })
