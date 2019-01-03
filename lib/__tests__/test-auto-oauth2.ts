@@ -45,6 +45,9 @@ describe('AutoOauth2', () => {
 
     it('not exists token file', async () => {
       const oauth2 = new AutoOauth2(test) as any
+      if (fs.existsSync(oauth2.tokenFilePath)) {
+        fs.unlinkSync(oauth2.tokenFilePath)
+      }
       const token = await (oauth2.loadAccessToken() as Promise<AccessToken>)
 
       expect(token).toBeUndefined()

@@ -4,6 +4,9 @@ import readline from 'readline'
 import { exec } from 'child_process'
 import { URL } from 'url'
 import rp from 'request-promise-native'
+import HttpServer from './http-server'
+import { Address } from 'cluster'
+import { AddressInfo } from 'net'
 
 const DEFAULT_TOKEN_FILE_PATH = './.accesstoken.json'
 
@@ -39,9 +42,8 @@ export class AutoOauth2 {
     }
 
     const code = await this.requestAuthorizeCode()
-    await this.requestAccessToken(code)
-
-    return { access_token: 'access_token', refresh_token: 'refresh_token', expires_in: 3000 }
+    const token = await this.requestAccessToken(code)
+    return token
   }
 
   /**
@@ -59,35 +61,56 @@ export class AutoOauth2 {
    */
   private async requestAuthorizeCode() {
     const uri = new URL(this.options.authorizeUri)
+    uri.searchParams.append('client_id', this.options.oauthClientId!)
+    uri.searchParams.append('redirect_uri', this.options.redirectUri)
+    uri.searchParams.append('scope', this.options.scopes.join(' '))
     if (this.options.responseType) uri.searchParams.append('response_type', this.options.responseType)
 
-    const code = await new Promise((resolve, reject) => {
-      const rl = readline.createInterface(process.stdin, process.stdout)
-      if (!this.options.noGui) {
-        switch (this.options.platform) {
-          case 'darwin': {
+    const redirectUri = new URL(this.options.redirectUri)
+    const server = new HttpServer({ port: Number(redirectUri.port) })
+    server.listen()
+    try {
+      const code = await new Promise<string>((resolve, reject) => {
+        server.setHandler(redirectUri.pathname, (req, res, _, params) => {
+          res.writeHead(200)
+          res.end('ok')
+          const code = params.get('code')
+          resolve(code!)
+        })
+
+        if (!this.options.noGui) {
+          if (this.options.platform == 'darwin') {
             // mac only
             exec(`open '${uri}'`)
-            break
           }
         }
-      }
-      console.log(`open authorize uri: ${uri}`)
-      rl.question('input code: ', code => {
-        if (!code) {
-          return reject(Error('empty code.'))
-        }
-        console.log(`code: ${code}`)
-        resolve(code)
+        console.log(`open authorize uri: ${uri}`)
+        const rl = readline.createInterface(process.stdin, process.stdout)
+        rl.question('input code: ', code => {
+          rl.close()
+          if (!code) {
+            return reject(Error('empty code.'))
+          }
+          console.log(`code: ${code}`)
+          resolve(code)
+        })
       })
-    })
-
-    return code as string
+      return code as string
+    } finally {
+      server.close()
+    }
   }
 
-  private async requestAccessToken(code: string) {
+  private async requestAccessToken(code: string, grantType: string = 'authorization_code') {
+    const body = {
+      code,
+      client_id: this.options.oauthClientId,
+      client_secret: this.options.oauthSecretKey,
+      grant_type: grantType,
+      redirect_uri: this.options.redirectUri
+    }
     const token = await rp(this.options.accessTokenUri, {
-      body: JSON.stringify({ code }),
+      body: JSON.stringify(body),
       method: 'POST'
     })
     console.log('receive access token:', token)
