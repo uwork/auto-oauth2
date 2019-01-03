@@ -19,12 +19,14 @@ export type AutoOauthOptions = CliParserOption & {
   noGui?: boolean
   platform?: string
   tokenSavePath?: string
+  now?: Date
 }
 
 export type AccessToken = {
   access_token: string
-  expires_in?: number
+  expires_in: number
   refresh_token?: string
+  created_at: number
 }
 
 export class AutoOauth2 {
@@ -50,9 +52,24 @@ export class AutoOauth2 {
    * load access token from file.
    */
   private async loadAccessToken() {
-    if (fs.existsSync(this.tokenFilePath)) {
-      return JSON.parse(fs.readFileSync(this.tokenFilePath).toString()) as AccessToken
+    if (!fs.existsSync(this.tokenFilePath)) {
+      return undefined
     }
+
+    const token = JSON.parse(fs.readFileSync(this.tokenFilePath).toString()) as AccessToken
+
+    const now = (this.options.now || new Date()).getTime()
+    if (token.created_at + token.expires_in! * 1000 > now) {
+      return token
+    }
+
+    if (token.refresh_token) {
+      // require refresh
+      return this.refreshAccessToken(token.refresh_token)
+    }
+
+    console.warn('expired access token.')
+
     return undefined
   }
 
@@ -117,8 +134,26 @@ export class AutoOauth2 {
     return this.saveAccessToken(JSON.parse(token))
   }
 
+  private async refreshAccessToken(refreshToken: string) {
+    const body = {
+      grant_type: 'refresh_token',
+      client_id: this.options.oauthClientId,
+      refresh_token: refreshToken
+    }
+    const token = await rp(this.options.accessTokenUri, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    })
+    console.log('refreshed access token:', token)
+    return this.saveAccessToken(JSON.parse(token))
+  }
+
   private saveAccessToken(token: AccessToken) {
-    fs.writeFileSync(this.tokenFilePath, JSON.stringify(token))
-    return token
+    const saveToken = {
+      ...token,
+      created_at: +(this.options.now || new Date())
+    }
+    fs.writeFileSync(this.tokenFilePath, JSON.stringify(saveToken))
+    return saveToken
   }
 }

@@ -6,6 +6,8 @@ import HttpServer from '../http-server'
 jest.mock('readline')
 jest.mock('child_process')
 
+const TEST_DATE = new Date(2019, 1, 3, 11, 22, 33).getTime()
+
 describe('AutoOauth2', () => {
   // basic pattern
   const test: AutoOauthOptions = {
@@ -23,7 +25,8 @@ describe('AutoOauth2', () => {
       const accessToken: AccessToken = {
         access_token: 'accessToken',
         expires_in: 3600,
-        refresh_token: 'refreshToken'
+        refresh_token: 'refreshToken',
+        created_at: TEST_DATE
       }
       fs.writeFileSync(tokenFilePath, JSON.stringify(accessToken))
 
@@ -38,6 +41,7 @@ describe('AutoOauth2', () => {
         expect(token.access_token).toBe(accessToken.access_token)
         expect(token.expires_in).toBe(accessToken.expires_in)
         expect(token.refresh_token).toBe(accessToken.refresh_token)
+        expect(token.created_at).toBe(accessToken.created_at)
       } finally {
         fs.unlinkSync(tokenFilePath)
       }
@@ -140,6 +144,53 @@ describe('AutoOauth2', () => {
         expect(e.error).toBe('invalid authorize code')
       } finally {
         server.close()
+        if (fs.existsSync(oauth2.tokenFilePath)) {
+          fs.unlinkSync(oauth2.tokenFilePath)
+        }
+      }
+    })
+  })
+
+  describe('refreshAccessToken', () => {
+    it('token refresh', async () => {
+      const tokenFilePath = path.resolve(__dirname, '.token.json')
+      const accessToken: AccessToken = {
+        access_token: 'accessToken',
+        expires_in: 3600,
+        refresh_token: 'refreshToken',
+        created_at: TEST_DATE - 10000 * 1000
+      }
+      fs.writeFileSync(tokenFilePath, JSON.stringify(accessToken))
+
+      const oauth2 = new AutoOauth2({ ...test, now: new Date(TEST_DATE) }) as any
+
+      const server = new HttpServer({ port: 1234 })
+      expect.assertions(5)
+      server.setHandler('/token', (_, res, requestBody) => {
+        const reqestJson = JSON.parse(requestBody)
+        expect(reqestJson.refresh_token).toBe(accessToken.refresh_token!)
+
+        res.writeHead(200)
+        res.end(
+          JSON.stringify({
+            access_token: 'token',
+            expires_in: 1200,
+            refresh_token: 'refresh'
+          } as AccessToken)
+        )
+      })
+      server.listen()
+      try {
+        const token = await oauth2.refreshAccessToken(accessToken.refresh_token)
+        expect(token.access_token).toBe('token')
+        expect(token.expires_in).toBe(1200)
+        expect(token.refresh_token).toBe('refresh')
+        expect(token.created_at).toBe(TEST_DATE)
+      } finally {
+        server.close()
+        if (fs.existsSync(tokenFilePath)) {
+          fs.unlinkSync(tokenFilePath)
+        }
         if (fs.existsSync(oauth2.tokenFilePath)) {
           fs.unlinkSync(oauth2.tokenFilePath)
         }
