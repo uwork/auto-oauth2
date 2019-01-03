@@ -1,6 +1,7 @@
 import { AutoOauth2, AutoOauthOptions, AccessToken } from '../auto-oauth2'
 import fs from 'fs'
 import path from 'path'
+import HttpServer from '../http-server'
 
 jest.mock('readline')
 jest.mock('child_process')
@@ -11,7 +12,7 @@ describe('AutoOauth2', () => {
     oauthClientId: 'clientId',
     oauthSecretKey: 'secretKey',
     authorizeUri: 'http://localhost/auth',
-    accessTokenUri: 'http://localhost/token',
+    accessTokenUri: 'http://localhost:1234/token',
     redirectUri: 'http://localhost/callback',
     scopes: ['scope1', 'scope2']
   }
@@ -73,6 +74,43 @@ describe('AutoOauth2', () => {
       const rl = require('readline')
       rl._mockInput = ''
       expect(oauth2.requestAuthorizeCode()).rejects.toThrow('empty code.')
+    })
+  })
+
+  describe('requestAccessToken', () => {
+    it('get access token', async () => {
+      const oauth2 = new AutoOauth2(test) as any
+      const DUMMY_AUTH_CODE = 'code'
+
+      const server = new HttpServer({ port: 1234 })
+      expect.assertions(5)
+      server.setHandler('/token', (_, res, requestBody) => {
+        const reqestJson = JSON.parse(requestBody)
+        expect(reqestJson.code).toBe(DUMMY_AUTH_CODE)
+
+        // return dummy access_token
+        res.writeHead(200)
+        res.end(
+          JSON.stringify({
+            access_token: 'token',
+            expires_in: 1200,
+            refresh_token: 'refresh'
+          } as AccessToken)
+        )
+      })
+      server.listen()
+      try {
+        const token = await oauth2.requestAccessToken(DUMMY_AUTH_CODE)
+        expect(token).toBeDefined()
+        expect(token.access_token).toBe('token')
+        expect(token.expires_in).toBe(1200)
+        expect(token.refresh_token).toBe('refresh')
+      } finally {
+        server.close()
+        if (fs.existsSync(oauth2.tokenFilePath)) {
+          fs.unlinkSync(oauth2.tokenFilePath)
+        }
+      }
     })
   })
 })

@@ -3,6 +3,8 @@ import ClientOauth2 from 'client-oauth2'
 import fs from 'fs'
 import readline from 'readline'
 import { exec } from 'child_process'
+import { URL } from 'url'
+import rp from 'request-promise-native'
 
 const DEFAULT_TOKEN_FILE_PATH = './.accesstoken.json'
 
@@ -66,9 +68,8 @@ export class AutoOauth2 {
    * open authorize uri.
    */
   private async requestAuthorizeCode() {
-    const uri = this.auth2.code.getUri({
-      query: { response_type: this.options.responseType! }
-    })
+    const uri = new URL(this.options.authorizeUri)
+    if (this.options.responseType) uri.searchParams.append('response_type', this.options.responseType)
 
     const code = await new Promise((resolve, reject) => {
       const rl = readline.createInterface(process.stdin, process.stdout)
@@ -95,19 +96,16 @@ export class AutoOauth2 {
   }
 
   private async requestAccessToken(code: string) {
-    const token = await this.auth2.token.getToken(this.options.redirectUri, { body: { code } })
-    // const token = await this.auth2.code.getToken(this.options.accessTokenUri, { body: { code } })
+    const token = await rp(this.options.accessTokenUri, {
+      body: JSON.stringify({ code }),
+      method: 'POST'
+    })
     console.log('receive access token:', token)
-    return this.saveAccessToken(token)
+    return this.saveAccessToken(JSON.parse(token))
   }
 
-  private saveAccessToken(token: ClientOauth2.Token) {
-    const accessToken: AccessToken = {
-      access_token: token.accessToken,
-      refresh_token: token.refreshToken,
-      expires_in: Number(token.data.expires_in)
-    }
-    fs.writeFileSync(this.tokenFilePath, accessToken)
-    return accessToken
+  private saveAccessToken(token: AccessToken) {
+    fs.writeFileSync(this.tokenFilePath, JSON.stringify(token))
+    return token
   }
 }
