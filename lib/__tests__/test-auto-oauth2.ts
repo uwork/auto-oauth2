@@ -112,5 +112,35 @@ describe('AutoOauth2', () => {
         }
       }
     })
+
+    it('token api error', async () => {
+      const oauth2 = new AutoOauth2(test) as any
+      const DUMMY_AUTH_CODE = 'code'
+
+      const server = new HttpServer({ port: 1234 })
+      expect.assertions(5)
+      server.setHandler('/token', (_, res, requestBody) => {
+        const reqestJson = JSON.parse(requestBody)
+        expect(reqestJson.code).toBe(DUMMY_AUTH_CODE)
+
+        // return dummy access_token
+        res.writeHead(503, 'invalid code')
+        res.end('invalid authorize code')
+      })
+      server.listen()
+      try {
+        await oauth2.requestAccessToken(DUMMY_AUTH_CODE)
+      } catch (e) {
+        expect(e).toBeDefined()
+        expect(e.statusCode).toBe(503)
+        expect(e.response.statusMessage).toBe('invalid code')
+        expect(e.error).toBe('invalid authorize code')
+      } finally {
+        server.close()
+        if (fs.existsSync(oauth2.tokenFilePath)) {
+          fs.unlinkSync(oauth2.tokenFilePath)
+        }
+      }
+    })
   })
 })
