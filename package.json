@@ -22,7 +22,6 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "client-oauth2": "^4.2.3",
     "commander": "^2.19.0",
     "request-promise-native": "^1.0.5"
   }

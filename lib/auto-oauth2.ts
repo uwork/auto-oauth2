@@ -1,5 +1,4 @@
 import { CliParserOption } from './cli-parser'
-import ClientOauth2 from 'client-oauth2'
 import fs from 'fs'
 import readline from 'readline'
 import { exec } from 'child_process'
@@ -27,17 +26,8 @@ export type AccessToken = {
 
 export class AutoOauth2 {
   private accessToken?: AccessToken
-  private auth2: ClientOauth2
   private tokenFilePath: string
   constructor(private options: AutoOauthOptions) {
-    this.auth2 = new ClientOauth2({
-      clientId: this.options.oauthClientId,
-      clientSecret: this.options.oauthSecretKey,
-      accessTokenUri: this.options.accessTokenUri,
-      authorizationUri: this.options.authorizeUri,
-      redirectUri: this.options.redirectUri,
-      scopes: this.options.scopes
-    })
     this.tokenFilePath = this.options.tokenSavePath || DEFAULT_TOKEN_FILE_PATH
     this.options.platform = this.options.platform || process.platform
   }
