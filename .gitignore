@@ -7,3 +7,6 @@ dist/
 
 # vscode
 .vscode
+
+# app
+.accesstoken.json
