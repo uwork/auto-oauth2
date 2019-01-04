@@ -27,7 +27,8 @@
   "scripts": {
     "test": "jest",
     "dev": "tsc --watch",
-    "build": "tsc"
+    "build": "tsc",
+    "dry-run-publish": "rm -rf dist/ && npm run build && tar -tf $(npm pack) && rm -f ./auto-oauth2-*.tgz"
   },
   "dependencies": {
     "commander": "^2.19.0",
