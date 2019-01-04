@@ -8,6 +8,11 @@
     "name": "uwork",
     "email": "uwork@users.noreply.github.com"
   },
+  "homepage": "https://github.com/uwork/auto-oauth2",
+  "keywords": [
+    "oauth2",
+    "cli"
+  ],
   "devDependencies": {
     "@types/jest": "^23.3.10",
     "@types/node": "^10.12.18",
