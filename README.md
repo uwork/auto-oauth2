@@ -10,7 +10,8 @@ $ npm install auto-oauth2
 
 # How to use
 
-```javascript:index.js
+```javascript
+// index.js
 const { AutoOauth2 } = require('auto-oauth2')
 
 const oauth2 = new AutoOauth2({
@@ -55,7 +56,8 @@ or
 $ node index.js -c [client_id] -s [client_secret]
 ```
 
-```javascript:index.js
+```javascript
+// index.js
 const { AutoOauth2 } = require('auto-oauth2')
 
 const oauth2 = new AutoOauth2({
