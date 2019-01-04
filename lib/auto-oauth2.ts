@@ -5,8 +5,6 @@ import { exec } from 'child_process'
 import { URL } from 'url'
 import rp from 'request-promise-native'
 import HttpServer from './http-server'
-import { Address } from 'cluster'
-import { AddressInfo } from 'net'
 
 const DEFAULT_TOKEN_FILE_PATH = './.accesstoken.json'
 
