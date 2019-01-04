@@ -1,7 +1,8 @@
 {
   "name": "auto-oauth2",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "license": "MIT",
   "author": {
     "name": "uwork",
@@ -20,7 +21,8 @@
   },
   "scripts": {
     "test": "jest",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "build": "tsc"
   },
   "dependencies": {
     "commander": "^2.19.0",
