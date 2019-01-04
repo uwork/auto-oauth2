@@ -1,1 +1,11 @@
+.vscode/
+.node-version
+node_modules/
 lib/
+.npmignore
+.prettierrc
+jest.config.js
+tslint.json
+__mocks__
+__tests__
+yarn.lock
