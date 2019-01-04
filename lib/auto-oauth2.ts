@@ -97,16 +97,17 @@ export class AutoOauth2 {
     try {
       const code = await new Promise<string>((resolve, reject) => {
         server.setHandler(redirectUri.pathname, (req, res, _, params) => {
-          res.writeHead(200)
-          res.end('ok')
+          rl.pause().close()
           const code = params.get('code')
+          res.writeHead(200)
+          res.end(JSON.stringify({ code }))
           resolve(code!)
         })
 
         if (!this.options.noGui) {
           if (this.options.platform == 'darwin') {
             // mac only
-            exec(`open '${uri}'`)
+            exec(`open '${uri}' &`)
           }
         }
         console.log(`open authorize uri: ${uri}`)
