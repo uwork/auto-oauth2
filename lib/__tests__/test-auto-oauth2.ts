@@ -56,6 +56,51 @@ describe('AutoOauth2', () => {
 
       expect(token).toBeUndefined()
     })
+
+    it('expired token', async () => {
+      const tokenFilePath = path.resolve(__dirname, '.token.json')
+      const accessToken: AccessToken = {
+        access_token: 'accessToken',
+        expires_in: 3600,
+        refresh_token: 'refreshToken',
+        created_at: TEST_DATE - 10000 * 1000
+      }
+      fs.writeFileSync(tokenFilePath, JSON.stringify(accessToken))
+      const oauth2 = new AutoOauth2(test) as any
+      if (fs.existsSync(oauth2.tokenFilePath)) {
+        fs.unlinkSync(oauth2.tokenFilePath)
+      }
+
+      try {
+        const oauth2 = new AutoOauth2({
+          ...test,
+          tokenSavePath: tokenFilePath,
+          now: new Date(TEST_DATE)
+        }) as any
+
+        // return dummy refreshed token
+        const token2: AccessToken = {
+          access_token: 'accessToken2',
+          expires_in: 2400,
+          refresh_token: 'refreshToken2',
+          created_at: TEST_DATE + 2400 * 1000
+        }
+        expect.assertions(6)
+        oauth2.refreshAccessToken = async (token: string) => {
+          expect(token).toBe('refreshToken')
+          return token2
+        }
+
+        const token = await (oauth2.loadAccessToken() as Promise<AccessToken>)
+        expect(token).toBeDefined()
+        expect(token.access_token).toBe(token2.access_token)
+        expect(token.expires_in).toBe(token2.expires_in)
+        expect(token.refresh_token).toBe(token2.refresh_token)
+        expect(token.created_at).toBe(token2.created_at)
+      } finally {
+        fs.unlinkSync(tokenFilePath)
+      }
+    })
   })
 
   describe('requestAuthorizeCode', () => {
@@ -165,9 +210,11 @@ describe('AutoOauth2', () => {
       const oauth2 = new AutoOauth2({ ...test, now: new Date(TEST_DATE) }) as any
 
       const server = new HttpServer({ port: 1234 })
-      expect.assertions(5)
+      expect.assertions(7)
       server.setHandler('/token', (_, res, requestBody) => {
         const reqestJson = JSON.parse(requestBody)
+        expect(reqestJson.client_id).toBe(test.oauthClientId)
+        expect(reqestJson.client_secret).toBe(test.oauthSecretKey)
         expect(reqestJson.refresh_token).toBe(accessToken.refresh_token!)
 
         res.writeHead(200)

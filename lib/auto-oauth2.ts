@@ -138,6 +138,7 @@ export class AutoOauth2 {
     const body = {
       grant_type: 'refresh_token',
       client_id: this.options.oauthClientId,
+      client_secret: this.options.oauthSecretKey,
       refresh_token: refreshToken
     }
     const token = await rp(this.options.accessTokenUri, {
