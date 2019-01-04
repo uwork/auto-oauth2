@@ -1,4 +1,4 @@
-import { CliParserOption } from './cli-parser'
+import { CliParserOption, CliParser } from './cli-parser'
 import fs from 'fs'
 import readline from 'readline'
 import { exec } from 'child_process'
@@ -31,6 +31,13 @@ export class AutoOauth2 {
   private accessToken?: AccessToken
   private tokenFilePath: string
   constructor(private options: AutoOauthOptions) {
+    const parser = new CliParser(options)
+    if (!options.oauthClientId && parser.oauthClientId) {
+      options.oauthClientId = parser.oauthClientId
+    }
+    if (!options.oauthSecretKey && parser.oauthSecretKey) {
+      options.oauthSecretKey = parser.oauthSecretKey
+    }
     this.tokenFilePath = this.options.tokenSavePath || DEFAULT_TOKEN_FILE_PATH
     this.options.platform = this.options.platform || process.platform
   }

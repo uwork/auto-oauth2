@@ -2,6 +2,7 @@ import { AutoOauth2, AutoOauthOptions, AccessToken } from '../auto-oauth2'
 import fs from 'fs'
 import path from 'path'
 import HttpServer from '../http-server'
+import { CliParserOption } from '../cli-parser'
 
 jest.mock('readline')
 jest.mock('child_process')
@@ -18,6 +19,46 @@ describe('AutoOauth2', () => {
     redirectUri: 'http://localhost/callback',
     scopes: ['scope1', 'scope2']
   }
+
+  describe('constructor', () => {
+    it('cli args', () => {
+      const tests = [
+        ['node', 'command', '--client-id', 'clientId', '--secret-key', 'secretKey'],
+        ['node', 'command', '-c', 'clientId', '-s', 'secretKey']
+      ]
+      for (const argv of tests) {
+        const oauth2 = new AutoOauth2({ ...test, argv }) as any
+
+        expect(oauth2.options.oauthClientId).toBe(argv[3])
+        expect(oauth2.options.oauthSecretKey).toBe(argv[5])
+      }
+    })
+
+    it('option args', () => {
+      const opts: CliParserOption = {
+        oauthClientId: 'clientId',
+        oauthSecretKey: 'secretId'
+      }
+      const oauth2 = new AutoOauth2({ ...test, ...opts }) as any
+
+      expect(oauth2.options.oauthClientId).toBe(opts.oauthClientId)
+      expect(oauth2.options.oauthSecretKey).toBe(opts.oauthSecretKey)
+    })
+
+    it('env args', () => {
+      const opts: CliParserOption = {
+        oauthClientId: 'clientId',
+        oauthSecretKey: 'secretId'
+      }
+
+      process.env.AAUTH_CLIENT_ID = opts.oauthClientId
+      process.env.AAUTH_SECRET_KEY = opts.oauthSecretKey
+      const oauth2 = new AutoOauth2({ ...test, ...opts }) as any
+
+      expect(oauth2.options.oauthClientId).toBe(opts.oauthClientId)
+      expect(oauth2.options.oauthSecretKey).toBe(opts.oauthSecretKey)
+    })
+  })
 
   describe('loadAccessToken', () => {
     it('exists token file', async () => {
