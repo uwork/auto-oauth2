@@ -38,6 +38,9 @@ export class AutoOauth2 {
     if (!options.oauthSecretKey && parser.oauthSecretKey) {
       options.oauthSecretKey = parser.oauthSecretKey
     }
+    if (!options.responseType) {
+      options.responseType = 'code'
+    }
     this.tokenFilePath = this.options.tokenSavePath || DEFAULT_TOKEN_FILE_PATH
     this.options.platform = this.options.platform || process.platform
   }
