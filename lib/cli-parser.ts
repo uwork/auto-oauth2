@@ -1,5 +1,4 @@
 import commander from 'commander'
-const pjson = require('../package.json')
 
 export type CliParserOption = {
   /**
@@ -35,7 +34,6 @@ export class CliParser {
     this.oauthSecretKey = options.oauthSecretKey || process.env.AAUTH_SECRET_KEY
     if (options.argv && 0 < options.argv.length) {
       commander
-        .version(pjson.version)
         .option('-c, --client-id [value]', 'OAuth Client ID')
         .option('-s, --secret-key [value]', 'OAuth Secret Key')
         .parse(options.argv)
