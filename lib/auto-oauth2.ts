@@ -18,6 +18,7 @@ export type AutoOauthOptions = CliParserOption & {
   platform?: string
   tokenSavePath?: string
   now?: Date
+  vendorOptions?: { [key: string]: string }
 }
 
 export type AccessToken = {
@@ -90,6 +91,12 @@ export class AutoOauth2 {
     uri.searchParams.append('redirect_uri', this.options.redirectUri)
     uri.searchParams.append('scope', this.options.scopes.join(' '))
     if (this.options.responseType) uri.searchParams.append('response_type', this.options.responseType)
+    if (this.options.vendorOptions) {
+      for (const key of Object.keys(this.options.vendorOptions)) {
+        const val = this.options.vendorOptions[key]
+        uri.searchParams.append(key, val)
+      }
+    }
 
     const redirectUri = new URL(this.options.redirectUri)
     const server = new HttpServer({ port: Number(redirectUri.port) })
