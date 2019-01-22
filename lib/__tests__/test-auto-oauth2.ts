@@ -263,7 +263,6 @@ describe('AutoOauth2', () => {
           JSON.stringify({
             access_token: 'token',
             expires_in: 1200,
-            refresh_token: 'refresh'
           } as AccessToken)
         )
       })
@@ -272,7 +271,7 @@ describe('AutoOauth2', () => {
         const token = await oauth2.refreshAccessToken(accessToken.refresh_token)
         expect(token.access_token).toBe('token')
         expect(token.expires_in).toBe(1200)
-        expect(token.refresh_token).toBe('refresh')
+        expect(token.refresh_token).toBe(accessToken.refresh_token)
         expect(token.created_at).toBe(TEST_DATE)
       } finally {
         server.close()

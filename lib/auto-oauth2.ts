@@ -162,7 +162,9 @@ export class AutoOauth2 {
       body: JSON.stringify(body)
     })
     console.log('refreshed access token:', token)
-    return this.saveAccessToken(JSON.parse(token))
+    const accessToken = JSON.parse(token)
+    accessToken.refresh_token = refreshToken
+    return this.saveAccessToken(accessToken)
   }
 
   private saveAccessToken(token: AccessToken) {
