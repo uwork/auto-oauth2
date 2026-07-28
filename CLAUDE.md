@@ -1,76 +1,79 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+このファイルは、このリポジトリで作業する Claude Code (claude.ai/code) にガイダンスを提供します。
 
-## What this is
+## 会話言語
 
-`auto-oauth2` is a small npm library (published as `auto-oauth2`) that automates the OAuth2
-authorization-code flow for CLI/local tools: it opens the authorize URL, spins up a temporary
-local HTTP server to catch the redirect (or prompts the user to paste the code manually), swaps
-the code for an access token, and caches the token to a local JSON file (refreshing it via
-`refresh_token` when expired).
+このリポジトリで作業する際は、ユーザーとの会話は日本語で行うこと。
 
-## Commands
+## これは何か
 
-- `npm run build` — compile TypeScript (`lib/**/*` + `index.ts`) to `dist/` via `tsc`.
-- `npm run dev` — `tsc --watch`.
-- `npm test` — run the Jest test suite.
-- Run a single test file: `npx jest lib/__tests__/test-auto-oauth2.ts`
-- Run tests matching a name: `npx jest -t "loadAccessToken"`
-- `npm run dry-run-publish` — clean `dist/`, build, and inspect the tarball that `npm pack` would publish (no actual publish).
+`auto-oauth2` は、CLI・ローカルツール向けに OAuth2 認可コードフローを自動化する小さな npm ライブラリ
+（`auto-oauth2` として公開）です。認可 URL を開き、リダイレクトを受け取るための一時的なローカル HTTP
+サーバーを起動し（あるいはユーザーにコードを手動で貼り付けるよう促し）、コードをアクセストークンに交換し、
+トークンをローカルの JSON ファイルにキャッシュします（期限切れ時は `refresh_token` で更新）。
 
-There is no separate lint script in `package.json`, but `tslint.json` (extending
-`tslint-plugin-prettier`) and `.prettierrc` define the style: no semicolons, single quotes,
-120 print width. Match this style by hand when editing (2-space indent, no semicolons, single
-quotes) since there's no `npm run lint` to invoke.
+## コマンド
 
-## Architecture
+- `npm run build` — TypeScript（`lib/**/*` + `index.ts`）を `tsc` で `dist/` にコンパイルする。
+- `npm run dev` — `tsc --watch`。
+- `npm test` — Jest のテストスイートを実行する。
+- 単一のテストファイルを実行: `npx jest lib/__tests__/test-auto-oauth2.ts`
+- 名前にマッチするテストを実行: `npx jest -t "loadAccessToken"`
+- `npm run dry-run-publish` — `dist/` をクリーンにしてビルドし、`npm pack` が公開するであろう tar ball の中身を確認する（実際には公開しない）。
 
-The public API is re-exported from `index.ts`, which just does `export * from './lib/auto-oauth2'`
-and `export * from './lib/cli-parser'`. Three files under `lib/` do all the work:
+`package.json` に独立した lint スクリプトはないが、`tslint.json`（`tslint-plugin-prettier` を extends）と
+`.prettierrc` がスタイルを定義している: セミコロンなし、シングルクォート、幅120文字。`npm run lint` が
+存在しないため、編集時はこのスタイル（2スペースインデント、セミコロンなし、シングルクォート）に手動で
+合わせること。
 
-- **`lib/auto-oauth2.ts`** — `AutoOauth2` class, the main entry point. `autoAuthorize()` is the
-  whole flow:
-  1. `loadAccessToken()` — read `.accesstoken.json` (or `tokenSavePath`); if the token hasn't
-     expired (`created_at + expires_in*1000 > now`), return it as-is; if expired but a
-     `refresh_token` exists, silently refresh it; otherwise fall through.
-  2. `requestAuthorizeCode()` — build the authorize URL from `authorizeUri` + client id/scopes/
-     `vendorOptions`, start a `HttpServer` bound to the port from `redirectUri`, register a
-     handler on the redirect path to capture `?code=`, optionally `open` the URL in a browser
-     (macOS only via `exec('open ...')`), and *also* race that against a `readline` prompt asking
-     the user to paste the code manually — whichever resolves first wins. The server is always
-     closed in a `finally`.
-  3. `requestAccessToken(code)` — POST to `accessTokenUri`, persist the result via
-     `saveAccessToken()` (stamps `created_at`).
-  - Token state is deliberately file-based (`DEFAULT_TOKEN_FILE_PATH = './.accesstoken.json'`),
-    not in-memory-only — this is what makes repeated `autoAuthorize()` calls skip the browser flow.
-  - `now`/`platform` are injectable via `AutoOauthOptions` specifically so tests can control
-    expiry logic and OS-specific browser-opening behavior deterministically.
+## アーキテクチャ
 
-- **`lib/http-server.ts`** — `HttpServer`, a minimal wrapper around Node's `http` module used only
-  to catch the single OAuth redirect. Supports registering per-path handlers
-  (`setHandler(path, handler)`); unmatched paths 404. Not a general-purpose router — it exists
-  solely to receive the one `redirectUri` callback.
+公開 API は `index.ts` から re-export されている。`index.ts` は単に `export * from './lib/auto-oauth2'` と
+`export * from './lib/cli-parser'` を行うだけである。実際の処理は `lib/` 配下の3ファイルが担う:
 
-- **`lib/cli-parser.ts`** — `CliParser` resolves `oauthClientId`/`oauthSecretKey` from three
-  sources, in increasing priority: environment variables (`AAUTH_CLIENT_ID`/`AAUTH_SECRET_KEY`) →
-  constructor options → CLI args (`--client-id`/`-c`, `--secret-key`/`-s`) parsed via `commander`
-  when an `argv` array is passed in. `AutoOauth2`'s constructor uses this to fill in
-  `oauthClientId`/`oauthSecretKey` only if they weren't already set directly on `options`.
+- **`lib/auto-oauth2.ts`** — メインのエントリポイントである `AutoOauth2` クラス。`autoAuthorize()` が
+  フロー全体を担う:
+  1. `loadAccessToken()` — `.accesstoken.json`（または `tokenSavePath`）を読み込む。トークンが期限切れで
+     なければ（`created_at + expires_in*1000 > now`）そのまま返す。期限切れでも `refresh_token` があれば
+     黙ってリフレッシュする。それ以外はフォールスルーする。
+  2. `requestAuthorizeCode()` — `authorizeUri` + クライアントID・スコープ・`vendorOptions` から認可 URL を
+     組み立て、`redirectUri` のポートにバインドした `HttpServer` を起動し、リダイレクトパスに `?code=` を
+     捕捉するハンドラを登録し、任意で（macOS のみ、`exec('open ...')` 経由で）URL をブラウザで開く。
+     さらにこれと並行して、ユーザーにコードを手動で貼り付けさせる `readline` プロンプトを走らせ、
+     どちらか早く解決した方が勝つ。サーバーは必ず `finally` でクローズされる。
+  3. `requestAccessToken(code)` — `accessTokenUri` に POST し、結果を `saveAccessToken()` で永続化する
+     （`created_at` を打刻する）。
+  - トークンの状態は意図的にファイルベース（`DEFAULT_TOKEN_FILE_PATH = './.accesstoken.json'`）であり、
+     メモリ内だけではない — これにより `autoAuthorize()` を繰り返し呼んでもブラウザフローをスキップできる。
+  - `now`/`platform` は `AutoOauthOptions` 経由で注入可能になっている。これはテストが有効期限ロジックや
+     OS 依存のブラウザ起動挙動を決定的に制御できるようにするためである。
 
-## Testing conventions
+- **`lib/http-server.ts`** — Node の `http` モジュールを薄くラップした `HttpServer`。OAuth のリダイレクトを
+  1回だけ捕捉するために使われる。パスごとのハンドラ登録（`setHandler(path, handler)`）をサポートし、
+  マッチしないパスは 404 になる。汎用ルーターではなく、`redirectUri` のコールバックを受け取るためだけに
+  存在する。
 
-- Tests live in `lib/__tests__/` (not colocated with source) and are named `test-*.ts`; Jest is
-  configured via `jest.config.js` with `roots: ['<rootDir>/lib']` and `testRegex` matching both
-  `__tests__/*` and `*.test.ts`/`*.spec.ts`.
-- `lib/__mocks__/child_process.js` and `lib/__mocks__/readline.js` are manual Jest mocks used with
-  `jest.mock('readline')` / `jest.mock('child_process')` in `test-auto-oauth2.ts` to avoid actually
-  opening a browser or blocking on stdin — the readline mock auto-answers via `_mockInput`.
-  Update `_mockInput` on the mocked module when a test needs to simulate a specific pasted code.
-  Since `exec('open ...')` is only triggered when `platform === 'darwin'`, tests pass `platform`
-  explicitly via `AutoOauthOptions` to exercise/avoid that path deterministically.
-- Private methods (e.g. `loadAccessToken`, `requestAuthorizeCode`) are exercised directly in tests
-  by casting the instance `as any` — this is the established pattern in this codebase, not a
-  workaround to avoid.
-- Token-file tests write real files under `lib/__tests__/` (e.g. `.token.json`) via
-  `tokenSavePath` — clean these up in `finally`/`afterEach` blocks as the existing tests do.
+- **`lib/cli-parser.ts`** — `CliParser` は `oauthClientId`/`oauthSecretKey` を、優先度が高い順に3つの
+  ソースから解決する: 環境変数（`AAUTH_CLIENT_ID`/`AAUTH_SECRET_KEY`）→ コンストラクタオプション →
+  CLI 引数（`--client-id`/`-c`、`--secret-key`/`-s`、`argv` 配列が渡された場合に `commander` でパース）。
+  `AutoOauth2` のコンストラクタは、`options` に `oauthClientId`/`oauthSecretKey` が直接設定されていない
+  場合にのみ、これを使って値を埋める。
+
+## テストの規約
+
+- テストは `lib/__tests__/` に配置される（ソースとは同じ場所に置かない）。ファイル名は `test-*.ts`。
+  Jest は `jest.config.js` で設定されており、`roots: ['<rootDir>/lib']`、`testRegex` は
+  `__tests__/*` と `*.test.ts`/`*.spec.ts` の両方にマッチする。
+- `lib/__mocks__/child_process.js` と `lib/__mocks__/readline.js` は、`test-auto-oauth2.ts` 内で
+  `jest.mock('readline')` / `jest.mock('child_process')` とともに使われる手動 Jest モックであり、
+  実際にブラウザを開いたり stdin でブロックしたりするのを避けるために使う — readline のモックは
+  `_mockInput` で自動的に応答する。テストで特定の貼り付けコードをシミュレートしたい場合は、モック
+  モジュールの `_mockInput` を更新すること。`exec('open ...')` は `platform === 'darwin'` のときにしか
+  呼ばれないため、テストはこの経路を決定的に通す/避けるために `AutoOauthOptions` 経由で `platform` を
+  明示的に渡している。
+- プライベートメソッド（例: `loadAccessToken`、`requestAuthorizeCode`）は、インスタンスを `as any` に
+  キャストして直接テストされている — これはこのコードベースで確立されたパターンであり、避けるべき
+  回避策ではない。
+- トークンファイルのテストは `tokenSavePath` 経由で `lib/__tests__/` 配下に実ファイル（例: `.token.json`）
+  を書き込む — 既存のテストと同様に `finally`/`afterEach` ブロックでクリーンアップすること。
