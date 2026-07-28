@@ -3,7 +3,6 @@ import fs from 'fs'
 import readline from 'readline'
 import { exec } from 'child_process'
 import { URL } from 'url'
-import rp from 'request-promise-native'
 import HttpServer from './http-server'
 
 const DEFAULT_TOKEN_FILE_PATH = './.accesstoken.json'
@@ -142,12 +141,9 @@ export class AutoOauth2 {
       grant_type: grantType,
       redirect_uri: this.options.redirectUri
     }
-    const token = await rp(this.options.accessTokenUri, {
-      body: JSON.stringify(body),
-      method: 'POST'
-    })
+    const token = await this.postJson(this.options.accessTokenUri, body)
     console.log('receive access token:', token)
-    return this.saveAccessToken(JSON.parse(token))
+    return this.saveAccessToken(token)
   }
 
   private async refreshAccessToken(refreshToken: string) {
@@ -157,14 +153,31 @@ export class AutoOauth2 {
       client_secret: this.options.oauthSecretKey,
       refresh_token: refreshToken
     }
-    const token = await rp(this.options.accessTokenUri, {
-      method: 'POST',
-      body: JSON.stringify(body)
-    })
-    console.log('refreshed access token:', token)
-    const accessToken = JSON.parse(token)
+    const accessToken = await this.postJson(this.options.accessTokenUri, body)
+    console.log('refreshed access token:', accessToken)
     accessToken.refresh_token = refreshToken
     return this.saveAccessToken(accessToken)
+  }
+
+  private async postJson(uri: string, body: object): Promise<AccessToken> {
+    const res = await fetch(uri, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+    const text = await res.text()
+    if (!res.ok) {
+      const err = new Error(`request failed: ${res.status} ${res.statusText}`) as Error & {
+        statusCode: number
+        statusMessage?: string
+        error: string
+      }
+      err.statusCode = res.status
+      err.statusMessage = res.statusText
+      err.error = text
+      throw err
+    }
+    return JSON.parse(text)
   }
 
   private saveAccessToken(token: AccessToken) {
