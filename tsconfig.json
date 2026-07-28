@@ -1,13 +1,15 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2020",
     "sourceMap": true,
     "module": "commonjs",
     "strict": true,
     "outDir": "./dist",
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "lib": ["es2015"],
+    "skipLibCheck": true,
+    "types": ["node", "jest"],
+    "lib": ["es2020"],
     "declaration": true
   },
   "include": ["index.ts", "lib/**/*"]

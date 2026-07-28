@@ -13,16 +13,18 @@
     "oauth2",
     "cli"
   ],
+  "engines": {
+    "node": ">=22"
+  },
   "devDependencies": {
-    "@types/jest": "^23.3.10",
-    "@types/node": "^10.12.18",
-    "@types/request-promise-native": "^1.0.15",
-    "jest": "^23.6.0",
-    "ts-jest": "^23.10.5",
-    "ts-node": "^7.0.1",
-    "tslint": "^5.12.0",
-    "tslint-plugin-prettier": "^2.0.1",
-    "typescript": "^3.2.2"
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.20.1",
+    "jest": "^30.4.2",
+    "ts-jest": "^29.4.12",
+    "ts-node": "^10.9.2",
+    "tslint": "^6.1.3",
+    "tslint-plugin-prettier": "^2.3.0",
+    "typescript": "^6.0.3"
   },
   "scripts": {
     "test": "jest",
@@ -31,12 +33,6 @@
     "dry-run-publish": "rm -rf dist/ && npm run build && tar -tf $(npm pack) && rm -f ./auto-oauth2-*.tgz"
   },
   "dependencies": {
-    "commander": "^2.19.0",
-    "handlebars": "^4.1.0",
-    "js-yaml": "^3.13.1",
-    "lodash": "^4.17.13",
-    "mem": "^4.0.0",
-    "request": "^2.88.0",
-    "request-promise-native": "^1.0.5"
+    "commander": "^14.0.0"
   }
 }

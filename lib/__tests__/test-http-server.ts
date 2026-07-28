@@ -1,23 +1,20 @@
 import HttpServer from '../http-server'
-import http, { IncomingMessage } from 'http'
 import net from 'net'
 import { URL } from 'url'
-import rp from 'request-promise-native'
 
 const TEST_PORT = 20472
 
 // http test helper
 type HttpResult = {
-  response: IncomingMessage
+  response: Response
   responseBody?: string
 }
-const _testRequest = (path: string, method: string, body?: string) => {
+const _testRequest = async (path: string, method: string, body?: string) => {
   const uri = new URL(`http://localhost:${TEST_PORT}${path}`)
   console.log(`request: ${uri.href}`)
-  return rp({ uri, method, body, resolveWithFullResponse: true }).then(r => {
-    console.log(Object.keys(r))
-    return { response: r, responseBody: r.body } as HttpResult
-  })
+  const response = await fetch(uri, { method, body })
+  const responseBody = await response.text()
+  return { response, responseBody } as HttpResult
 }
 const testGet = (path: string) => {
   return _testRequest(path, 'GET')
@@ -62,8 +59,8 @@ describe('http-server', () => {
       try {
         const { response: resp } = await testGet('/')
         expect(resp).toBeDefined()
-        expect(resp.statusCode).toBe(200)
-        expect(resp.statusMessage).toBe('OK')
+        expect(resp.status).toBe(200)
+        expect(resp.statusText).toBe('OK')
       } finally {
         server.close()
       }
@@ -73,7 +70,9 @@ describe('http-server', () => {
       const server = new HttpServer({ port: TEST_PORT })
       server.listen()
       try {
-        await expect(testGet('/')).rejects.toThrow('404 - ""')
+        const { response: resp } = await testGet('/')
+        expect(resp.status).toBe(404)
+        expect(resp.statusText).toBe('Not Found')
       } finally {
         server.close()
       }
@@ -97,8 +96,8 @@ describe('http-server', () => {
       try {
         const { response: resp } = await testGet('/test?key=value&key2=値2&key3=value3&key3=value3-2')
         expect(resp).toBeDefined()
-        expect(resp.statusCode).toBe(200)
-        expect(resp.statusMessage).toBe('OK')
+        expect(resp.status).toBe(200)
+        expect(resp.statusText).toBe('OK')
       } finally {
         server.close()
       }
@@ -117,8 +116,8 @@ describe('http-server', () => {
       try {
         const { response: resp } = await testPost('/test', 'body data')
         expect(resp).toBeDefined()
-        expect(resp.statusCode).toBe(200)
-        expect(resp.statusMessage).toBe('OK')
+        expect(resp.status).toBe(200)
+        expect(resp.statusText).toBe('OK')
       } finally {
         server.close()
       }
@@ -135,8 +134,8 @@ describe('http-server', () => {
       try {
         const { response: resp, responseBody } = await testPost('/test', 'body data')
         expect(resp).toBeDefined()
-        expect(resp.statusCode).toBe(200)
-        expect(resp.statusMessage).toBe('OK')
+        expect(resp.status).toBe(200)
+        expect(resp.statusText).toBe('OK')
         expect(responseBody).toBe('result ok')
       } finally {
         server.close()

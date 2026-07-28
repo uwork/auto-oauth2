@@ -1,4 +1,4 @@
-import commander from 'commander'
+import { Command } from 'commander'
 
 export type CliParserOption = {
   /**
@@ -33,16 +33,18 @@ export class CliParser {
     this.oauthClientId = options.oauthClientId || process.env.AAUTH_CLIENT_ID
     this.oauthSecretKey = options.oauthSecretKey || process.env.AAUTH_SECRET_KEY
     if (options.argv && 0 < options.argv.length) {
-      commander
+      const program = new Command()
+      program
         .option('-c, --client-id [value]', 'OAuth Client ID')
         .option('-s, --secret-key [value]', 'OAuth Secret Key')
         .parse(options.argv)
 
-      if (commander.clientId) {
-        this.oauthClientId = commander.clientId
+      const opts = program.opts()
+      if (opts.clientId) {
+        this.oauthClientId = opts.clientId
       }
-      if (commander.secretKey) {
-        this.oauthSecretKey = commander.secretKey
+      if (opts.secretKey) {
+        this.oauthSecretKey = opts.secretKey
       }
     }
   }

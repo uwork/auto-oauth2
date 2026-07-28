@@ -74,7 +74,8 @@ describe('AutoOauth2', () => {
       try {
         const oauth2 = new AutoOauth2({
           ...test,
-          tokenSavePath: tokenFilePath
+          tokenSavePath: tokenFilePath,
+          now: new Date(TEST_DATE)
         }) as any
         const token = await (oauth2.loadAccessToken() as Promise<AccessToken>)
 
@@ -223,10 +224,10 @@ describe('AutoOauth2', () => {
       server.listen()
       try {
         await oauth2.requestAccessToken(DUMMY_AUTH_CODE)
-      } catch (e) {
+      } catch (e: any) {
         expect(e).toBeDefined()
         expect(e.statusCode).toBe(503)
-        expect(e.response.statusMessage).toBe('invalid code')
+        expect(e.statusMessage).toBe('invalid code')
         expect(e.error).toBe('invalid authorize code')
       } finally {
         server.close()
